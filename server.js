@@ -7,8 +7,12 @@ const User = require('./models/User');
 const Client = require('./models/Client');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
+const cors = require('cors'); // <--- Agregar esto
 
 const app = express();
+
+// Usar el middleware CORS
+app.use(cors()); // <--- Agregar esto
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
@@ -165,8 +169,10 @@ app.post('/clients', authenticate, async (req, res) => {
   const { name, email, phone } = req.body;
   try {
     const client = await Client.create({ name, email, phone });
+    console.log(client);
     res.status(201).json({ message: 'Cliente creado', client });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: 'Error al crear cliente' });
   }
 });
@@ -192,6 +198,50 @@ app.get('/clients', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Error al obtener clientes' });
   }
 });
+
+
+
+/**
+ * @swagger
+ * /clients/{id}:
+ *   get:
+ *     summary: Obtener un cliente por ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID del cliente
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cliente encontrado
+ *       404:
+ *         description: Cliente no encontrado
+ *       500:
+ *         description: Error al obtener el cliente
+ */
+
+
+
+app.get('/clients/:id', authenticate, async (req, res) => {
+  const clientId = req.params.id; // Obtiene el ID del cliente de los parámetros de la ruta
+  try {
+    const client = await Client.findOne({ where: { id: clientId } }); // Busca el cliente por ID
+
+    if (client) {
+      res.status(200).json(client); // Devuelve el cliente encontrado
+    } else {
+      res.status(404).json({ error: 'Cliente no encontrado' }); // Devuelve un error 404 si no se encuentra el cliente
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener el cliente' }); // Devuelve un error 500 si ocurre un error
+  }
+});
+
+
 
 /**
  * @swagger
